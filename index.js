@@ -25,8 +25,27 @@
 // });
 
 import express from 'express';
+import path from 'path';
+import mongoose from 'mongoose';
+
+mongoose.connect('mongodb://127.0.0.1:27017',{
+    dbName:'backend',
+
+}).then(()=>{
+    console.log("Database Connected Successfully")
+})
+
+const messageSchema = new mongoose.Schema({
+    name:String,
+    email:String,
+})
+const message = mongoose.model('messages',messageSchema)
 
 const app = express();
+
+app.use(express.static(path.join(path.resolve(),'public')));
+// Middleware Used
+app.use(express.urlencoded({extended:true}));
 
 app.set('view engine','ejs');
 
@@ -34,6 +53,23 @@ app.get('/',(req,res)=>{
     res.render("index",{name:'Akshay',class:'12th',section:'A'})
 })
 
+app.get('/success',(req,res)=>{
+    res.render("success");
+})
+
+app.get('/add',(req,res) =>{
+    message.create({name:"Akshay",email : "sample@gmail.com"}).then(()=>{
+        res.redirect("success");
+        
+    })
+})
+
+app.post('/contact', async (req,res)=>{
+    const {name,email}= req.body;
+    await message.create({name,email});
+    res.redirect('/success')
+
+});
 app.listen(5000,()=>{
     console.log("Servered")
 })
