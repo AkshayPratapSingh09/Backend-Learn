@@ -24,52 +24,81 @@
 //     console.log("Server is woring");
 // });
 
-import express from 'express';
-import path from 'path';
-import mongoose from 'mongoose';
+import express from "express";
+import path from "path";
+import mongoose from "mongoose";
+import cookieParser from "cookie-parser";
 
-mongoose.connect('mongodb://127.0.0.1:27017',{
-    dbName:'backend',
-
-}).then(()=>{
-    console.log("Database Connected Successfully")
-})
+mongoose
+  .connect("mongodb://127.0.0.1:27017", {
+    dbName: "backend",
+  })
+  .then(() => {
+    console.log("Database Connected Successfully");
+  });
 
 const messageSchema = new mongoose.Schema({
-    name:String,
-    email:String,
-})
-const message = mongoose.model('messages',messageSchema)
+  name: String,
+  email: String,
+});
+const message = mongoose.model("messages", messageSchema);
 
 const app = express();
 
-app.use(express.static(path.join(path.resolve(),'public')));
+app.use(express.static(path.join(path.resolve(), "public")));
 // Middleware Used
-app.use(express.urlencoded({extended:true}));
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
-app.set('view engine','ejs');
+app.set("view engine", "ejs");
 
-app.get('/',(req,res)=>{
-    res.render("index",{name:'Akshay',class:'12th',section:'A'})
-})
+const isAuthenticated = (req,res)=>{
+    const { token } = req.cookies;
+    if (token) {
+        next();
+      } else {
+        res.render("login");
+      }
+}
 
-app.get('/success',(req,res)=>{
-    res.render("success");
-})
-
-app.get('/add',(req,res) =>{
-    message.create({name:"Akshay",email : "sample@gmail.com"}).then(()=>{
-        res.redirect("success");
-        
-    })
-})
-
-app.post('/contact', async (req,res)=>{
-    const {name,email}= req.body;
-    await message.create({name,email});
-    res.redirect('/success')
-
+app.get("/", isAuthenticated,(req, res) => {
+    res.render('logout');
+  
 });
-app.listen(5000,()=>{
-    console.log("Servered")
-})
+
+// app.get('/success',(req,res)=>{
+//     res.render("success");
+// })
+
+// app.get('/add',(req,res) =>{
+//     message.create({name:"Akshay",email : "sample@gmail.com"}).then(()=>{
+//         res.redirect("success");
+
+//     })
+// })
+
+// app.post('/contact', async (req,res)=>{
+//     const {name,email}= req.body;
+//     await message.create({name,email});
+//     res.redirect('/success')
+
+// });
+
+app.post("/login", (req, res) => {
+  res.cookie("token", "iamin", {
+    httpOnly: true,
+    expires: new Date(Date.now() + 60 * 1000),
+  });
+  res.redirect("/");
+});
+
+app.get("/logout", (req, res) => {
+  res.cookie("token", null, {
+    httpOnly: true,
+    expires: new Date(Date.now()),
+  });
+  res.redirect("/");
+});
+app.listen(5000, () => {
+  console.log("Servered");
+});
