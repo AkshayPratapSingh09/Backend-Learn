@@ -3,7 +3,6 @@ import bcrpyt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { sendCookie } from "../utils/features.js";
 
-
 export const getAllUsers = async (req, res) => {
   const users = await User.find({});
 
@@ -31,8 +30,8 @@ export const register = async (req, res) => {
     password: hashedPassword,
   });
 
-sendCookie(user,res,"Registered SuccessFully",201)
-}
+  sendCookie(user, res, "Registered SuccessFully", 201);
+};
 
 export const getUserDetails = async (req, res) => {
   const { id } = req.params;
@@ -44,26 +43,41 @@ export const getUserDetails = async (req, res) => {
   });
 };
 
-export const login = async (req,res) =>{
+export const login = async (req, res) => {
+  const { email, password } = req.body;
 
-    const { email, password } = req.body;
+  const user = await User.findOne({ email }).select("+password");
 
-    const user = await User.findOne({ email }).select("+password");
-
-    
-    if (!user)
+  if (!user)
     return res.status(404).json({
-        success:false,
-        message:"Invalid Email or Password",
-    })
+      success: false,
+      message: "Invalid Email or Password",
+    });
 
-    const isMatch = await bcrpyt.compare(password,user.password);
+  const isMatch = await bcrpyt.compare(password, user.password);
 
-    if (!isMatch)
+  if (!isMatch)
     return res.status(404).json({
-        success:false,
-        message:"Invalid Email or Password",
-    })
+      success: false,
+      message: "Invalid Email or Password",
+    });
 
-    sendCookie(user,res,`Welcome back, ${user.name}`,200);
-}
+  sendCookie(user, res, `Welcome back, ${user.name}`, 200);
+};
+
+export const getMyProfile = (req, res) => {
+  res.status(200).json({
+    success: true,
+    user: req.user,
+  });
+};
+
+export const logout = (req, res) => {
+  res
+    .status(200)
+    .cookie("token", "", { expires: new Date(Date.now()) })
+    .json({
+      success: true,
+      user: req.user,
+    });
+};
